@@ -1,0 +1,3743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>小说创作工作台</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "PingFang SC",
+        "Microsoft YaHei",
+        sans-serif;
+    background:#f4f5f7;
+    color:#20232a;
+}
+
+button,
+input,
+textarea,
+select{
+    font:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+.app{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+/* ================= 顶部 ================= */
+
+.top{
+    height:58px;
+    background:#181a20;
+    color:white;
+
+    display:flex;
+    align-items:center;
+
+    padding:0 20px;
+}
+
+.logo{
+    font-size:18px;
+    font-weight:700;
+}
+
+.save-status{
+    margin-left:auto;
+    font-size:13px;
+    color:#bfc4cc;
+}
+
+/* ================= 主布局 ================= */
+
+.layout{
+    flex:1;
+    min-height:0;
+    display:flex;
+}
+
+/* ================= 左侧 ================= */
+
+.sidebar{
+    width:240px;
+
+    background:white;
+
+    border-right:1px solid #dddfe5;
+
+    padding:16px;
+
+    overflow-y:auto;
+}
+
+.group-title{
+    font-size:12px;
+    color:#8b919c;
+
+    margin:
+        12px 5px
+        7px;
+}
+
+.side-button{
+    width:100%;
+
+    border:1px solid #dddfe5;
+
+    background:white;
+
+    border-radius:9px;
+
+    padding:10px 11px;
+
+    margin-bottom:7px;
+
+    text-align:left;
+
+    transition:.15s;
+}
+
+.side-button:hover{
+    background:#f1f3f6;
+}
+
+/* ================= 主区域 ================= */
+
+.main{
+    flex:1;
+
+    min-width:0;
+
+    overflow:auto;
+
+    padding:20px;
+}
+
+.card{
+    background:white;
+
+    border:1px solid #dddfe5;
+
+    border-radius:14px;
+
+    padding:18px;
+
+    margin-bottom:18px;
+}
+
+.card-title{
+    font-size:18px;
+
+    font-weight:700;
+
+    margin-bottom:7px;
+}
+
+.description{
+    color:#7c838e;
+
+    font-size:12px;
+
+    line-height:1.7;
+
+    margin-bottom:12px;
+}
+
+/* ================= 人物关系图 ================= */
+
+.graph{
+    height:560px;
+
+    position:relative;
+
+    overflow:hidden;
+
+    border:1px solid #dfe2e8;
+
+    border-radius:12px;
+
+    background-color:#fafbfc;
+
+    background-image:
+        linear-gradient(#eceef2 1px,transparent 1px),
+        linear-gradient(90deg,#eceef2 1px,transparent 1px);
+
+    background-size:28px 28px;
+}
+
+#relationship-svg{
+    position:absolute;
+
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    pointer-events:none;
+}
+
+#character-layer{
+    position:absolute;
+
+    inset:0;
+}
+
+/* ================= 人物节点 ================= */
+
+.character-node{
+    position:absolute;
+
+    width:130px;
+    min-height:64px;
+
+    padding:11px;
+
+    border:2px solid #292d35;
+
+    border-radius:50%;
+
+    background:white;
+
+    display:flex;
+
+    justify-content:center;
+    align-items:center;
+
+    text-align:center;
+
+    user-select:none;
+
+    cursor:pointer;
+
+    box-shadow:
+        0 3px 12px rgba(0,0,0,.08);
+
+    transition:
+        border-color .15s,
+        background .15s,
+        box-shadow .15s,
+        transform .15s;
+}
+
+.character-node:hover{
+    box-shadow:
+        0 5px 18px rgba(0,0,0,.14);
+}
+
+.character-node.selected{
+    background:#eef2ff;
+
+    border-color:#4d5bd5;
+
+    box-shadow:
+        0 0 0 4px rgba(77,91,213,.12);
+}
+
+/* ================= 关系线 ================= */
+
+.relationship-line{
+    stroke:#8b929e;
+
+    stroke-width:2;
+
+    transition:
+        stroke .15s,
+        stroke-width .15s,
+        opacity .15s;
+}
+
+.relationship-line.dim{
+    opacity:.12;
+}
+
+.relationship-line.active{
+    stroke:#3f51d7;
+
+    stroke-width:4;
+
+    opacity:1;
+}
+
+.relationship-hit{
+    stroke:transparent;
+
+    stroke-width:18;
+
+    pointer-events:stroke;
+
+    cursor:pointer;
+}
+
+/* ================= 关系信息 ================= */
+
+.relationship-panel{
+    position:absolute;
+
+    right:15px;
+    top:15px;
+
+    width:270px;
+
+    max-height:calc(100% - 30px);
+
+    overflow:auto;
+
+    background:rgba(255,255,255,.97);
+
+    border:1px solid #d9dce3;
+
+    border-radius:12px;
+
+    box-shadow:
+        0 8px 30px rgba(0,0,0,.12);
+
+    padding:15px;
+
+    display:none;
+
+    z-index:5;
+}
+
+.relationship-panel.show{
+    display:block;
+}
+
+.relationship-panel h3{
+    margin:0 0 10px;
+
+    font-size:16px;
+}
+
+.relation-item{
+    border-top:1px solid #eceef2;
+
+    padding:10px 0;
+}
+
+.relation-item:first-child{
+    border-top:0;
+}
+
+.relation-name{
+    font-weight:700;
+
+    margin-bottom:4px;
+}
+
+.relation-type{
+    color:#596170;
+
+    font-size:12px;
+
+    margin-bottom:5px;
+}
+
+.relation-small{
+    font-size:12px;
+
+    line-height:1.6;
+
+    color:#626a76;
+}
+
+/* ================= 时间线 ================= */
+
+.timeline{
+    border:1px solid #dddfe5;
+
+    border-radius:12px;
+
+    padding:15px;
+
+    margin-bottom:14px;
+
+    background:white;
+}
+
+.timeline-header{
+    display:flex;
+
+    align-items:center;
+
+    gap:9px;
+}
+
+.timeline-header h3{
+    margin:0;
+
+    font-size:16px;
+}
+
+.timeline-header .grow{
+    flex:1;
+}
+
+.axis{
+    height:125px;
+
+    position:relative;
+
+    margin:5px 15px;
+}
+
+.axis-line{
+    position:absolute;
+
+    left:0;
+    right:0;
+
+    top:52px;
+
+    height:3px;
+
+    background:#22262e;
+}
+
+.tick{
+    position:absolute;
+
+    top:42px;
+
+    width:2px;
+
+    height:22px;
+
+    background:#22262e;
+}
+
+.tick-label{
+    position:absolute;
+
+    top:69px;
+
+    transform:translateX(-50%);
+
+    font-size:11px;
+
+    color:#737b87;
+}
+
+.plot-node{
+    position:absolute;
+
+    top:44px;
+
+    width:17px;
+    height:17px;
+
+    transform:translateX(-50%);
+
+    border-radius:50%;
+
+    background:#181a20;
+
+    border:3px solid white;
+
+    box-shadow:
+        0 0 0 1px #181a20;
+
+    cursor:pointer;
+
+    z-index:2;
+}
+
+.plot-node:hover{
+    transform:
+        translateX(-50%)
+        scale(1.25);
+}
+
+.plot-label{
+    position:absolute;
+
+    bottom:26px;
+
+    transform:translateX(-50%);
+
+    font-size:11px;
+
+    white-space:nowrap;
+
+    max-width:150px;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+}
+
+/* ================= 按钮 ================= */
+
+.btn{
+    border:0;
+
+    border-radius:8px;
+
+    padding:9px 13px;
+
+    background:#eceef2;
+}
+
+.btn:hover{
+    filter:brightness(.97);
+}
+
+.btn.dark{
+    background:#181a20;
+
+    color:white;
+}
+
+.btn.red{
+    background:#ffe8e8;
+
+    color:#a11;
+}
+
+/* ================= 空状态 ================= */
+
+.empty{
+    padding:38px;
+
+    text-align:center;
+
+    border:1px dashed #d0d4dc;
+
+    border-radius:10px;
+
+    color:#9299a5;
+}
+
+/* ================= 弹窗 ================= */
+
+.modal-bg{
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.5);
+
+    display:none;
+
+    align-items:center;
+    justify-content:center;
+
+    padding:18px;
+
+    z-index:100;
+}
+
+.modal-bg.show{
+    display:flex;
+}
+
+.modal{
+    width:min(680px,100%);
+
+    max-height:92vh;
+
+    overflow:auto;
+
+    background:white;
+
+    border-radius:15px;
+
+    padding:21px;
+}
+
+.modal h2{
+    margin:
+        0 0 15px;
+}
+
+.modal label{
+    display:block;
+
+    margin:
+        11px 0 6px;
+
+    color:#626975;
+
+    font-size:13px;
+}
+
+.modal input,
+.modal textarea,
+.modal select{
+    width:100%;
+
+    border:1px solid #d5d9e0;
+
+    border-radius:8px;
+
+    padding:10px;
+
+    background:white;
+}
+
+.modal textarea{
+    min-height:100px;
+
+    resize:vertical;
+}
+
+.modal select[multiple]{
+    min-height:130px;
+}
+
+.two-columns{
+    display:grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap:10px;
+}
+
+.actions{
+    display:flex;
+
+    gap:8px;
+
+    flex-wrap:wrap;
+
+    margin-top:15px;
+}
+
+.detail{
+    white-space:pre-wrap;
+
+    line-height:1.7;
+
+    color:#454b55;
+}
+
+.info-box{
+    padding:12px;
+
+    background:#f6f7f9;
+
+    border-radius:9px;
+
+    line-height:1.7;
+
+    white-space:pre-wrap;
+}
+
+@media(max-width:800px){
+
+    .sidebar{
+        width:190px;
+    }
+
+    .two-columns{
+        grid-template-columns:1fr;
+    }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="app">
+
+<header class="top">
+
+    <div class="logo">
+        ✦ 小说创作工作台
+    </div>
+
+    <div
+        id="saveStatus"
+        class="save-status">
+        ● 已保存
+    </div>
+
+</header>
+
+
+<div class="layout">
+
+
+<!-- ================= 左侧菜单 ================= -->
+
+<aside class="sidebar">
+
+    <div class="group-title">
+        小说
+    </div>
+
+    <button
+        class="side-button"
+        onclick="createNovel()">
+        ＋ 新建小说
+    </button>
+
+    <button
+        class="side-button"
+        onclick="editNovel()">
+        📖 小说信息
+    </button>
+
+
+    <div class="group-title">
+        创作
+    </div>
+
+    <button
+        class="side-button"
+        onclick="characterForm()">
+        ＋ 新建人物
+    </button>
+
+    <button
+        class="side-button"
+        onclick="relationshipForm()">
+        ＋ 新建人物关系
+    </button>
+
+    <button
+        class="side-button"
+        onclick="timelineForm()">
+        ＋ 新建时间线
+    </button>
+
+    <button
+        class="side-button"
+        onclick="plotForm()">
+        ＋ 新建情节
+    </button>
+
+
+    <div class="group-title">
+        设定
+    </div>
+
+    <button
+        class="side-button"
+        onclick="worldForm()">
+        🌍 编辑世界观
+    </button>
+
+</aside>
+
+
+<!-- ================= 主区域 ================= -->
+
+<main class="main">
+
+
+<section class="card">
+
+    <div
+        id="novelTitle"
+        class="card-title">
+        未命名小说
+    </div>
+
+    <div
+        id="novelSummary"
+        class="description">
+    </div>
+
+</section>
+
+
+<!-- ================= 人物关系 ================= -->
+
+<section class="card">
+
+    <div class="card-title">
+        人物关系图
+    </div>
+
+    <div class="description">
+
+        <b>单击人物：</b>
+        显示该人物相关的关系。
+
+        <br>
+
+        <b>双击人物：</b>
+        打开人物人设卡。
+
+        <br>
+
+        <b>拖动人物：</b>
+        调整人物位置。
+
+        <br>
+
+        <b>点击关系线：</b>
+        查看详细关系。
+
+    </div>
+
+
+    <div
+        id="graph"
+        class="graph">
+
+        <svg
+            id="relationship-svg">
+        </svg>
+
+        <div
+            id="character-layer">
+        </div>
+
+
+        <div
+            id="relationshipPanel"
+            class="relationship-panel">
+
+            <h3>
+                人物关系
+            </h3>
+
+            <div
+                id="relationshipPanelContent">
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= 时间线 ================= -->
+
+<section class="card">
+
+    <div class="card-title">
+        时间线
+    </div>
+
+    <div class="description">
+
+        可以建立多条独立时间线。
+        每条时间线都有自己的时间范围。
+        情节必须放在某一条时间线上。
+
+    </div>
+
+    <div id="timelines">
+    </div>
+
+</section>
+
+
+</main>
+
+</div>
+
+</div>
+
+
+<!-- ================= 弹窗 ================= -->
+
+<div
+    id="modalBg"
+    class="modal-bg">
+
+    <div
+        id="modal"
+        class="modal">
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   数据
+===================================================== */
+
+const STORAGE_KEY =
+    "novel_creator_v4";
+
+
+let DATA =
+    JSON.parse(
+        localStorage.getItem(
+            STORAGE_KEY
+        ) || "null"
+    )
+    ||
+    {
+        title:"未命名小说",
+
+        background:"",
+
+        world:"",
+
+        characters:[],
+
+        relationships:[],
+
+        timelines:[]
+    };
+
+
+let saveTimer = null;
+
+
+/* 当前被选中的人物 */
+
+let selectedCharacterId = null;
+
+
+/* 拖动状态 */
+
+let dragState = null;
+
+
+/* =====================================================
+   工具
+===================================================== */
+
+function $(id){
+
+    return document.getElementById(id);
+
+}
+
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(
+            /[&<>"']/g,
+            function(char){
+
+                return {
+                    "&":"&amp;",
+                    "<":"&lt;",
+                    ">":"&gt;",
+                    '"':"&quot;",
+                    "'":"&#39;"
+                }[char];
+
+            }
+        );
+
+}
+
+
+function createId(prefix){
+
+    return (
+        prefix +
+        "_" +
+        Math.random()
+            .toString(36)
+            .substring(2,9)
+    );
+
+}
+
+
+/* =====================================================
+   自动保存
+===================================================== */
+
+function saveNow(){
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(DATA)
+    );
+
+    $("saveStatus").textContent =
+        "● 已保存";
+
+}
+
+
+function autoSave(){
+
+    $("saveStatus").textContent =
+        "● 保存中…";
+
+    clearTimeout(saveTimer);
+
+    saveTimer =
+        setTimeout(
+            saveNow,
+            350
+        );
+
+}
+
+
+/* =====================================================
+   弹窗
+===================================================== */
+
+function openModal(html){
+
+    $("modal").innerHTML =
+        html;
+
+    $("modalBg").classList.add(
+        "show"
+    );
+
+}
+
+
+function closeModal(){
+
+    $("modalBg")
+        .classList
+        .remove("show");
+
+}
+
+
+$("modalBg").addEventListener(
+    "click",
+    function(event){
+
+        if(
+            event.target ===
+            $("modalBg")
+        ){
+
+            closeModal();
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   总渲染
+===================================================== */
+
+function render(){
+
+    $("novelTitle").textContent =
+        DATA.title ||
+        "未命名小说";
+
+
+    $("novelSummary").innerHTML =
+
+        `
+        背景：
+        ${escapeHTML(
+            DATA.background ||
+            "未填写"
+        )}
+
+        ｜人物：
+        ${DATA.characters.length}
+
+        ｜关系：
+        ${DATA.relationships.length}
+
+        ｜时间线：
+        ${DATA.timelines.length}
+        `;
+
+
+    renderRelationshipGraph();
+
+    renderTimelines();
+
+}
+
+
+/* =====================================================
+   新建小说
+===================================================== */
+
+function createNovel(){
+
+    if(
+        !confirm(
+            "确定新建小说吗？当前小说数据会被清空。"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    DATA = {
+
+        title:"未命名小说",
+
+        background:"",
+
+        world:"",
+
+        characters:[],
+
+        relationships:[],
+
+        timelines:[]
+
+    };
+
+
+    selectedCharacterId =
+        null;
+
+
+    saveNow();
+
+    render();
+
+}
+
+
+/* =====================================================
+   小说信息
+===================================================== */
+
+function editNovel(){
+
+    openModal(`
+
+        <h2>
+            小说信息
+        </h2>
+
+        <label>
+            小说名称
+        </label>
+
+        <input
+            id="novelNameInput"
+            value="${escapeHTML(DATA.title)}"
+        >
+
+
+        <label>
+            小说背景
+        </label>
+
+        <textarea
+            id="novelBackgroundInput"
+            placeholder="故事发生的时代、地点、社会背景……"
+        >${escapeHTML(DATA.background)}</textarea>
+
+
+        <div class="actions">
+
+            <button
+                class="btn dark"
+                onclick="saveNovel()">
+                保存
+            </button>
+
+            <button
+                class="btn"
+                onclick="closeModal()">
+                取消
+            </button>
+
+        </div>
+
+    `);
+
+}
+
+
+function saveNovel(){
+
+    DATA.title =
+        $("novelNameInput")
+            .value
+            .trim()
+        ||
+        "未命名小说";
+
+
+    DATA.background =
+        $("novelBackgroundInput")
+            .value;
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* =====================================================
+   世界观
+===================================================== */
+
+function worldForm(){
+
+    openModal(`
+
+        <h2>
+            世界观
+        </h2>
+
+        <div class="description">
+
+            一本小说只有一个世界观。
+            这里用于编辑这个唯一的世界观。
+
+        </div>
+
+
+        <label>
+            世界观设定
+        </label>
+
+        <textarea
+            id="worldInput"
+            style="min-height:300px"
+            placeholder="时代、国家、城市、社会规则、历史、科技、特殊设定……"
+        >${escapeHTML(DATA.world)}</textarea>
+
+
+        <div class="actions">
+
+            <button
+                class="btn dark"
+                onclick="saveWorld()">
+                保存
+            </button>
+
+            <button
+                class="btn"
+                onclick="closeModal()">
+                取消
+            </button>
+
+        </div>
+
+    `);
+
+}
+
+
+function saveWorld(){
+
+    DATA.world =
+        $("worldInput").value;
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* =====================================================
+   人物
+===================================================== */
+
+function characterForm(id=""){
+
+    const character =
+        DATA.characters.find(
+            c => c.id === id
+        )
+        ||
+        {
+            name:"",
+            info:"",
+            x:60,
+            y:60
+        };
+
+
+    openModal(`
+
+        <h2>
+            ${
+                id
+                ?
+                "编辑人物人设卡"
+                :
+                "新建人物"
+            }
+        </h2>
+
+
+        <label>
+            人物姓名
+        </label>
+
+        <input
+            id="characterName"
+            value="${escapeHTML(character.name)}"
+            placeholder="例如：莱布乔尔"
+        >
+
+
+        <label>
+            人设卡
+        </label>
+
+        <textarea
+            id="characterInfo"
+            style="min-height:300px"
+            placeholder="
+年龄：
+身份：
+外貌：
+性格：
+成长经历：
+目标：
+秘密：
+人物弱点：
+与其他人物的关系：
+……"
+        >${escapeHTML(character.info)}</textarea>
+
+
+        <div class="actions">
+
+            <button
+                class="btn dark"
+                onclick="saveCharacter('${id}')">
+                保存
+            </button>
+
+
+            ${
+                id
+                ?
+                `
+                <button
+                    class="btn red"
+                    onclick="deleteCharacter('${id}')">
+                    删除人物
+                </button>
+                `
+                :
+                ""
+            }
+
+
+            <button
+                class="btn"
+                onclick="closeModal()">
+                取消
+            </button>
+
+        </div>
+
+    `);
+
+}
+
+
+function saveCharacter(id){
+
+    const name =
+        $("characterName")
+            .value
+            .trim();
+
+
+    if(!name){
+
+        alert(
+            "请输入人物姓名。"
+        );
+
+        return;
+
+    }
+
+
+    if(id){
+
+        const character =
+            DATA.characters.find(
+                c => c.id === id
+            );
+
+
+        character.name =
+            name;
+
+        character.info =
+            $("characterInfo")
+                .value;
+
+    }
+
+    else{
+
+        const index =
+            DATA.characters.length;
+
+
+        DATA.characters.push({
+
+            id:createId(
+                "character"
+            ),
+
+            name:name,
+
+            info:
+                $("characterInfo")
+                    .value,
+
+            x:
+                40 +
+                (index % 4) * 170,
+
+            y:
+                40 +
+                Math.floor(index / 4)
+                * 120
+
+        });
+
+    }
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* 删除人物 */
+
+function deleteCharacter(id){
+
+    if(
+        !confirm(
+            "删除人物后，与该人物有关的所有人物关系也会删除。确定吗？"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    DATA.characters =
+        DATA.characters.filter(
+            c => c.id !== id
+        );
+
+
+    DATA.relationships =
+        DATA.relationships.filter(
+            r =>
+                r.a !== id &&
+                r.b !== id
+        );
+
+
+    DATA.timelines.forEach(
+        timeline => {
+
+            timeline.events =
+                (timeline.events || [])
+                    .map(
+                        event => {
+
+                            event.characters =
+                                (
+                                    event.characters
+                                    || []
+                                )
+                                .filter(
+                                    cid =>
+                                        cid !== id
+                                );
+
+                            return event;
+
+                        }
+                    );
+
+        }
+    );
+
+
+    if(
+        selectedCharacterId === id
+    ){
+
+        selectedCharacterId =
+            null;
+
+    }
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* =====================================================
+   人物关系图
+===================================================== */
+
+function renderRelationshipGraph(){
+
+    const graph =
+        $("graph");
+
+    const layer =
+        $("character-layer");
+
+    const svg =
+        $("relationship-svg");
+
+
+    layer.innerHTML = "";
+
+    svg.innerHTML = "";
+
+
+    const width =
+        graph.clientWidth;
+
+    const height =
+        graph.clientHeight;
+
+
+    /* -------------------------------
+       创建人物节点
+    -------------------------------- */
+
+    DATA.characters.forEach(
+        character => {
+
+            character.x =
+                Math.max(
+                    5,
+                    Math.min(
+                        width - 130,
+                        character.x
+                    )
+                );
+
+
+            character.y =
+                Math.max(
+                    5,
+                    Math.min(
+                        height - 65,
+                        character.y
+                    )
+                );
+
+
+            const node =
+                document.createElement(
+                    "div"
+                );
+
+
+            node.className =
+                "character-node";
+
+
+            if(
+                selectedCharacterId ===
+                character.id
+            ){
+
+                node.classList.add(
+                    "selected"
+                );
+
+            }
+
+
+            node.textContent =
+                character.name;
+
+
+            node.style.left =
+                character.x + "px";
+
+
+            node.style.top =
+                character.y + "px";
+
+
+            /*
+             * 点击/双击/拖动的核心逻辑
+             */
+
+            let pointerStart = null;
+
+            let moved = false;
+
+
+            node.addEventListener(
+                "pointerdown",
+                function(event){
+
+                    pointerStart = {
+
+                        x:event.clientX,
+
+                        y:event.clientY
+
+                    };
+
+
+                    moved = false;
+
+
+                    dragState = {
+
+                        character,
+
+                        startX:
+                            character.x,
+
+                        startY:
+                            character.y,
+
+                        pointerX:
+                            event.clientX,
+
+                        pointerY:
+                            event.clientY
+
+                    };
+
+
+                    node.setPointerCapture(
+                        event.pointerId
+                    );
+
+                }
+            );
+
+
+            node.addEventListener(
+                "pointermove",
+                function(event){
+
+                    if(
+                        !dragState ||
+                        dragState.character
+                        !== character
+                    ){
+
+                        return;
+
+                    }
+
+
+                    const dx =
+                        event.clientX -
+                        dragState.pointerX;
+
+
+                    const dy =
+                        event.clientY -
+                        dragState.pointerY;
+
+
+                    if(
+                        Math.abs(dx) > 4 ||
+                        Math.abs(dy) > 4
+                    ){
+
+                        moved = true;
+
+                    }
+
+
+                    character.x =
+                        Math.max(
+                            0,
+                            Math.min(
+                                width - 130,
+                                dragState.startX +
+                                dx
+                            )
+                        );
+
+
+                    character.y =
+                        Math.max(
+                            0,
+                            Math.min(
+                                height - 65,
+                                dragState.startY +
+                                dy
+                            )
+                        );
+
+
+                    node.style.left =
+                        character.x + "px";
+
+
+                    node.style.top =
+                        character.y + "px";
+
+
+                    drawRelationshipLines();
+
+                    autoSave();
+
+                }
+            );
+
+
+            node.addEventListener(
+                "pointerup",
+                function(){
+
+                    dragState =
+                        null;
+
+                }
+            );
+
+
+            /*
+             * 单击人物
+             */
+
+            node.addEventListener(
+                "click",
+                function(event){
+
+                    if(moved){
+
+                        return;
+
+                    }
+
+
+                    selectedCharacterId =
+                        character.id;
+
+
+                    showCharacterRelationships(
+                        character.id
+                    );
+
+
+                    renderRelationshipGraph();
+
+                }
+            );
+
+
+            /*
+             * 双击人物
+             */
+
+            node.addEventListener(
+                "dblclick",
+                function(event){
+
+                    event.stopPropagation();
+
+                    characterForm(
+                        character.id
+                    );
+
+                }
+            );
+
+
+            layer.appendChild(node);
+
+        }
+    );
+
+
+    drawRelationshipLines();
+
+}
+
+
+/* =====================================================
+   画人物关系线
+===================================================== */
+
+function drawRelationshipLines(){
+
+    const svg =
+        $("relationship-svg");
+
+
+    svg.innerHTML = "";
+
+
+    DATA.relationships.forEach(
+        relationship => {
+
+            const A =
+                DATA.characters.find(
+                    c =>
+                        c.id ===
+                        relationship.a
+                );
+
+
+            const B =
+                DATA.characters.find(
+                    c =>
+                        c.id ===
+                        relationship.b
+                );
+
+
+            if(!A || !B){
+
+                return;
+
+            }
+
+
+            const x1 =
+                A.x + 65;
+
+            const y1 =
+                A.y + 32;
+
+
+            const x2 =
+                B.x + 65;
+
+            const y2 =
+                B.y + 32;
+
+
+            const line =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "line"
+                );
+
+
+            line.setAttribute(
+                "x1",
+                x1
+            );
+
+            line.setAttribute(
+                "y1",
+                y1
+            );
+
+            line.setAttribute(
+                "x2",
+                x2
+            );
+
+            line.setAttribute(
+                "y2",
+                y2
+            );
+
+
+            line.classList.add(
+                "relationship-line"
+            );
+
+
+            /*
+             * 当前人物相关关系高亮
+             */
+
+            if(
+                selectedCharacterId
+            ){
+
+                const related =
+                    relationship.a ===
+                        selectedCharacterId
+                    ||
+                    relationship.b ===
+                        selectedCharacterId;
+
+
+                if(related){
+
+                    line.classList.add(
+                        "active"
+                    );
+
+                }
+
+                else{
+
+                    line.classList.add(
+                        "dim"
+                    );
+
+                }
+
+            }
+
+
+            svg.appendChild(line);
+
+
+            /*
+             * 点击区域
+             */
+
+            const hit =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "line"
+                );
+
+
+            hit.setAttribute(
+                "x1",
+                x1
+            );
+
+            hit.setAttribute(
+                "y1",
+                y1
+            );
+
+            hit.setAttribute(
+                "x2",
+                x2
+            );
+
+            hit.setAttribute(
+                "y2",
+                y2
+            );
+
+
+            hit.classList.add(
+                "relationship-hit"
+            );
+
+
+            hit.style.pointerEvents =
+                "stroke";
+
+
+            hit.addEventListener(
+                "click",
+                function(){
+
+                    showRelationshipDetail(
+                        relationship.id
+                    );
+
+                }
+            );
+
+
+            svg.appendChild(hit);
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   显示人物关系
+===================================================== */
+
+function showCharacterRelationships(
+    characterId
+){
+
+    const character =
+        DATA.characters.find(
+            c => c.id === characterId
+        );
+
+
+    if(!character){
+
+        return;
+
+    }
+
+
+    const relationships =
+        DATA.relationships.filter(
+            relationship =>
+                relationship.a ===
+                    characterId
+                ||
+                relationship.b ===
+                    characterId
+        );
+
+
+    const panel =
+        $("relationshipPanel");
+
+
+    const content =
+        $("relationshipPanelContent");
+
+
+    panel.classList.add(
+        "show"
+    );
+
+
+    if(
+        relationships.length === 0
+    ){
+
+        content.innerHTML = `
+
+            <div class="relation-small">
+
+                ${escapeHTML(character.name)}
+                目前还没有建立人物关系。
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    content.innerHTML =
+        relationships
+            .map(
+                relationship => {
+
+                    const otherId =
+                        relationship.a ===
+                            characterId
+                        ?
+                        relationship.b
+                        :
+                        relationship.a;
+
+
+                    const other =
+                        DATA.characters.find(
+                            c =>
+                                c.id ===
+                                otherId
+                        );
+
+
+                    return `
+
+                        <div class="relation-item">
+
+                            <div class="relation-name">
+
+                                ${escapeHTML(
+                                    character.name
+                                )}
+
+                                ↔
+
+                                ${escapeHTML(
+                                    other?.name ||
+                                    "未知人物"
+                                )}
+
+                            </div>
+
+
+                            <div class="relation-type">
+
+                                ${escapeHTML(
+                                    relationship.type ||
+                                    "未填写关系类型"
+                                )}
+
+                            </div>
+
+
+                            <div class="relation-small">
+
+                                ${escapeHTML(
+                                    relationship.desc ||
+                                    "暂无关系描述"
+                                )}
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* =====================================================
+   关系编辑
+===================================================== */
+
+function relationshipForm(id=""){
+
+    if(
+        DATA.characters.length < 2
+    ){
+
+        alert(
+            "请至少创建两个人物。"
+        );
+
+        return;
+
+    }
+
+
+    const relationship =
+        DATA.relationships.find(
+            r => r.id === id
+        )
+        ||
+        {
+
+            a:DATA.characters[0].id,
+
+            b:DATA.characters[1].id,
+
+            type:"",
+
+            desc:"",
+
+            conflict:"",
+
+            change:""
+
+        };
+
+
+    const options =
+        DATA.characters
+            .map(
+                character => `
+
+                    <option
+                        value="${character.id}"
+                        ${
+                            character.id ===
+                            relationship.a
+                            ?
+                            "selected"
+                            :
+                            ""
+                        }
+                    >
+                        ${escapeHTML(
+                            character.name
+                        )}
+                    </option>
+
+                `
+            )
+            .join("");
+
+
+    const optionsB =
+        DATA.characters
+            .map(
+                character => `
+
+                    <option
+                        value="${character.id}"
+                        ${
+                            character.id ===
+                            relationship.b
+                            ?
+                            "selected"
+                            :
+                            ""
+                        }
+                    >
+                        ${escapeHTML(
+                            character.name
+                        )}
+                    </option>
+
+                `
+            )
+            .join("");
+
+
+    openModal(`
+
+        <h2>
+            ${
+                id
+                ?
+                "编辑人物关系"
+                :
+                "新建人物关系"
+            }
+        </h2>
+
+
+        <div class="two-columns">
+
+            <div>
+
+                <label>
+                    人物 A
+                </label>
+
+                <select
+                    id="relationA">
+                    ${options}
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label>
+                    人物 B
+                </label>
+
+                <select
+                    id="relationB">
+                    ${optionsB}
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <label>
+            关系类型
+        </label>
+
+        <input
+            id="relationType"
+            value="${escapeHTML(
+                relationship.type
+            )}"
+            placeholder="朋友、敌人、亲属、合作、竞争……"
+        >
+
+
+        <label>
+            关系描述
+        </label>
+
+        <textarea
+            id="relationDesc"
+        >${escapeHTML(
+            relationship.desc
+        )}</textarea>
+
+
+        <label>
+            冲突
+        </label>
+
+        <textarea
+            id="relationConflict"
+        >${escapeHTML(
+            relationship.conflict
+        )}</textarea>
+
+
+        <label>
+            关系变化
+        </label>
+
+        <textarea
+            id="relationChange"
+        >${escapeHTML(
+            relationship.change
+        )}</textarea>
+
+
+        <div class="actions">
+
+            <button
+                class="btn dark"
+                onclick="saveRelationship('${id}')">
+                保存
+            </button>
+
+
+            ${
+                id
+                ?
+                `
+                <button
+                    class="btn red"
+                    onclick="deleteRelationship('${id}')">
+                    删除关系
+                </button>
+                `
+                :
+                ""
+            }
+
+
+            <button
+                class="btn"
+                onclick="closeModal()">
+                取消
+            </button>
+
+        </div>
+
+    `);
+
+}
+
+
+function saveRelationship(id){
+
+    const a =
+        $("relationA").value;
+
+
+    const b =
+        $("relationB").value;
+
+
+    if(a === b){
+
+        alert(
+            "人物关系必须连接两个不同的人物。"
+        );
+
+        return;
+
+    }
+
+
+    const object = {
+
+        id:
+            id ||
+            createId("relationship"),
+
+        a:a,
+
+        b:b,
+
+        type:
+            $("relationType").value,
+
+        desc:
+            $("relationDesc").value,
+
+        conflict:
+            $("relationConflict").value,
+
+        change:
+            $("relationChange").value
+
+    };
+
+
+    if(id){
+
+        const index =
+            DATA.relationships.findIndex(
+                r => r.id === id
+            );
+
+
+        DATA.relationships[index] =
+            object;
+
+    }
+
+    else{
+
+        DATA.relationships.push(
+            object
+        );
+
+    }
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* =====================================================
+   关系详情
+===================================================== */
+
+function showRelationshipDetail(id){
+
+    const relationship =
+        DATA.relationships.find(
+            r => r.id === id
+        );
+
+
+    if(!relationship){
+
+        return;
+
+    }
+
+
+    const A =
+        DATA.characters.find(
+            c => c.id === relationship.a
+        );
+
+
+    const B =
+        DATA.characters.find(
+            c => c.id === relationship.b
+        );
+
+
+    openModal(`
+
+        <h2>
+
+            ${escapeHTML(
+                A?.name
+            )}
+
+            ↔
+
+            ${escapeHTML(
+                B?.name
+            )}
+
+        </h2>
+
+
+        <p>
+
+            <b>
+                关系：
+            </b>
+
+            ${escapeHTML(
+                relationship.type ||
+                "未填写"
+            )}
+
+        </p>
+
+
+        <p>
+            <b>
+                关系描述
+            </b>
+        </p>
+
+        <div class="detail">
+            ${escapeHTML(
+                relationship.desc ||
+                "未填写"
+            )}
+        </div>
+
+
+        <p>
+            <b>
+                冲突
+            </b>
+        </p>
+
+        <div class="detail">
+            ${escapeHTML(
+                relationship.conflict ||
+                "未填写"
+            )}
+        </div>
+
+
+        <p>
+            <b>
+                关系变化
+            </b>
+        </p>
+
+        <div class="detail">
+            ${escapeHTML(
+                relationship.change ||
+                "未填写"
+            )}
+        </div>
+
+
+        <div class="actions">
+
+            <button
+                class="btn dark"
+                onclick="relationshipForm('${id}')">
+                编辑
+            </button>
+
+
+            <button
+                class="btn red"
+                onclick="deleteRelationship('${id}')">
+                删除
+            </button>
+
+
+            <button
+                class="btn"
+                onclick="closeModal()">
+                关闭
+            </button>
+
+        </div>
+
+    `);
+
+}
+
+
+function deleteRelationship(id){
+
+    if(
+        !confirm(
+            "确定删除这条人物关系吗？"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    DATA.relationships =
+        DATA.relationships.filter(
+            r => r.id !== id
+        );
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* =====================================================
+   时间线
+===================================================== */
+
+function timelineForm(id=""){
+
+    const timeline =
+        DATA.timelines.find(
+            t => t.id === id
+        )
+        ||
+        {
+
+            name:"",
+
+            start:2000,
+
+            end:2030
+
+        };
+
+
+    openModal(`
+
+        <h2>
+            ${
+                id
+                ?
+                "编辑时间线"
+                :
+                "新建时间线"
+            }
+        </h2>
+
+
+        <label>
+            时间线名称
+        </label>
+
+        <input
+            id="timelineName"
+            value="${escapeHTML(
+                timeline.name
+            )}"
+            placeholder="主线、回忆线、女主线……"
+        >
+
+
+        <div class="two-columns">
+
+            <div>
+
+                <label>
+                    开始年份
+                </label>
+
+                <input
+                    id="timelineStart"
+                    type="number"
+                    value="${timeline.start}"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label>
+                    结束年份
+                </label>
+
+                <input
+                    id="timelineEnd"
+                    type="number"
+                    value="${timeline.end}"
+                >
+
+            </div>
+
+        </div>
+
+
+        <div class="actions">
+
+            <button
+                class="btn dark"
+                onclick="saveTimeline('${id}')">
+                保存
+            </button>
+
+
+            ${
+                id
+                ?
+                `
+                <button
+                    class="btn red"
+                    onclick="deleteTimeline('${id}')">
+                    删除时间线
+                </button>
+                `
+                :
+                ""
+            }
+
+
+            <button
+                class="btn"
+                onclick="closeModal()">
+                取消
+            </button>
+
+        </div>
+
+    `);
+
+}
+
+
+function saveTimeline(id){
+
+    const name =
+        $("timelineName")
+            .value
+            .trim();
+
+
+    const start =
+        Number(
+            $("timelineStart").value
+        );
+
+
+    const end =
+        Number(
+            $("timelineEnd").value
+        );
+
+
+    if(!name){
+
+        alert(
+            "请输入时间线名称。"
+        );
+
+        return;
+
+    }
+
+
+    if(end <= start){
+
+        alert(
+            "结束年份必须大于开始年份。"
+        );
+
+        return;
+
+    }
+
+
+    if(id){
+
+        const timeline =
+            DATA.timelines.find(
+                t => t.id === id
+            );
+
+
+        timeline.name =
+            name;
+
+        timeline.start =
+            start;
+
+        timeline.end =
+            end;
+
+    }
+
+    else{
+
+        DATA.timelines.push({
+
+            id:createId(
+                "timeline"
+            ),
+
+            name:name,
+
+            start:start,
+
+            end:end,
+
+            events:[]
+
+        });
+
+    }
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* 删除时间线 */
+
+function deleteTimeline(id){
+
+    if(
+        !confirm(
+            "删除时间线会同时删除这条时间线上的所有情节。确定吗？"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    DATA.timelines =
+        DATA.timelines.filter(
+            t => t.id !== id
+        );
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* =====================================================
+   情节
+===================================================== */
+
+function plotForm(
+    timelineId="",
+    eventId=""
+){
+
+    if(
+        DATA.timelines.length === 0
+    ){
+
+        alert(
+            "请先创建至少一条时间线。"
+        );
+
+        return;
+
+    }
+
+
+    let timeline =
+        DATA.timelines.find(
+            t =>
+                t.id === timelineId
+        )
+        ||
+        DATA.timelines[0];
+
+
+    let event =
+        (timeline.events || [])
+            .find(
+                e =>
+                    e.id === eventId
+            )
+        ||
+        {
+
+            year:timeline.start,
+
+            title:"",
+
+            content:"",
+
+            characters:[],
+
+            conflict:"",
+
+            result:""
+
+        };
+
+
+    /*
+     * 时间线选择
+     */
+
+    const timelineOptions =
+        DATA.timelines
+            .map(
+                t => `
+
+                    <option
+                        value="${t.id}"
+                        ${
+                            t.id ===
+                            timeline.id
+                            ?
+                            "selected"
+                            :
+                            ""
+                        }
+                    >
+                        ${escapeHTML(
+                            t.name
+                        )}
+                    </option>
+
+                `
+            )
+            .join("");
+
+
+    /*
+     * 人物选择
+     *
+     * 注意：
+     * multiple 保留！
+     *
+     * 一个情节可以选择多个角色。
+     */
+
+    const characterOptions =
+        DATA.characters
+            .map(
+                character => `
+
+                    <option
+                        value="${character.id}"
+                        ${
+                            (
+                                event.characters
+                                || []
+                            )
+                            .includes(
+                                character.id
+                            )
+                            ?
+                            "selected"
+                            :
+                            ""
+                        }
+                    >
+                        ${escapeHTML(
+                            character.name
+                        )}
+                    </option>
+
+                `
+            )
+            .join("");
+
+
+    openModal(`
+
+        <h2>
+            ${
+                eventId
+                ?
+                "编辑情节"
+                :
+                "新建情节"
+            }
+        </h2>
+
+
+        <label>
+            所属时间线
+        </label>
+
+        <select id="eventTimeline">
+            ${timelineOptions}
+        </select>
+
+
+        <div class="two-columns">
+
+            <div>
+
+                <label>
+                    时间 / 年份
+                </label>
+
+                <input
+                    id="eventYear"
+                    type="number"
+                    value="${event.year}"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label>
+                    情节标题
+                </label>
+
+                <input
+                    id="eventTitle"
+                    value="${escapeHTML(
+                        event.title
+                    )}"
+                    placeholder="例如：第一次见面"
+                >
+
+            </div>
+
+        </div>
+
+
+        <label>
+            情节内容
+        </label>
+
+        <textarea
+            id="eventContent"
+            style="min-height:160px"
+        >${escapeHTML(
+            event.content
+        )}</textarea>
+
+
+        <label>
+            涉及人物
+        </label>
+
+        <!--
+            这里必须是 multiple
+            因为一个情节可以涉及多个角色
+        -->
+
+        <select
+            id="eventCharacters"
+            multiple>
+
+            ${characterOptions}
+
+        </select>
+
+
+        <div class="description">
+
+            按住 Command（Mac）
+            或 Ctrl（Windows）
+            可以选择多个不同人物。
+
+        </div>
+
+
+        <label>
+            情节冲突
+        </label>
+
+        <textarea
+            id="eventConflict"
+        >${escapeHTML(
+            event.conflict
+        )}</textarea>
+
+
+        <label>
+            情节结果
+        </label>
+
+        <textarea
+            id="eventResult"
+        >${escapeHTML(
+            event.result
+        )}</textarea>
+
+
+        <div class="actions">
+
+            <button
+                class="btn dark"
+                onclick="savePlot('${timelineId}','${eventId}')">
+                保存情节
+            </button>
+
+
+            ${
+                eventId
+                ?
+                `
+                <button
+                    class="btn red"
+                    onclick="deletePlot('${timelineId}','${eventId}')">
+                    删除情节
+                </button>
+                `
+                :
+                ""
+            }
+
+
+            <button
+                class="btn"
+                onclick="closeModal()">
+                取消
+            </button>
+
+        </div>
+
+    `);
+
+}
+
+
+/* =====================================================
+   保存情节
+===================================================== */
+
+function savePlot(
+    oldTimelineId,
+    eventId
+){
+
+    const newTimelineId =
+        $("eventTimeline").value;
+
+
+    const timeline =
+        DATA.timelines.find(
+            t =>
+                t.id === newTimelineId
+        );
+
+
+    const year =
+        Number(
+            $("eventYear").value
+        );
+
+
+    if(
+        year < timeline.start ||
+        year > timeline.end
+    ){
+
+        alert(
+            `年份必须在 ${timeline.start} - ${timeline.end} 之间。`
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * 多选人物
+     */
+
+    const selectedCharacters =
+        [
+            ...$("eventCharacters")
+                .selectedOptions
+        ]
+        .map(
+            option =>
+                option.value
+        );
+
+
+    const event = {
+
+        id:
+            eventId ||
+            createId("event"),
+
+        year:year,
+
+        title:
+            $("eventTitle")
+                .value
+                .trim()
+            ||
+            "未命名情节",
+
+        content:
+            $("eventContent")
+                .value,
+
+        /*
+         * 一个情节可以有多个角色
+         */
+
+        characters:
+            selectedCharacters,
+
+        conflict:
+            $("eventConflict")
+                .value,
+
+        result:
+            $("eventResult")
+                .value
+
+    };
+
+
+    /*
+     * 如果是编辑
+     * 先从原时间线删除
+     */
+
+    if(eventId){
+
+        const oldTimeline =
+            DATA.timelines.find(
+                t =>
+                    t.id ===
+                    oldTimelineId
+            );
+
+
+        if(oldTimeline){
+
+            oldTimeline.events =
+                (
+                    oldTimeline.events
+                    || []
+                )
+                .filter(
+                    e =>
+                        e.id !== eventId
+                );
+
+        }
+
+    }
+
+
+    /*
+     * 放入新的时间线
+     */
+
+    if(!timeline.events){
+
+        timeline.events = [];
+
+    }
+
+
+    timeline.events.push(
+        event
+    );
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* =====================================================
+   情节详情
+===================================================== */
+
+function showPlotDetail(
+    timelineId,
+    eventId
+){
+
+    const timeline =
+        DATA.timelines.find(
+            t =>
+                t.id === timelineId
+        );
+
+
+    if(!timeline){
+
+        return;
+
+    }
+
+
+    const event =
+        timeline.events.find(
+            e =>
+                e.id === eventId
+        );
+
+
+    if(!event){
+
+        return;
+
+    }
+
+
+    const names =
+        (
+            event.characters
+            || []
+        )
+        .map(
+            characterId => {
+
+                const character =
+                    DATA.characters.find(
+                        c =>
+                            c.id ===
+                            characterId
+                    );
+
+                return character
+                    ?.name;
+
+            }
+        )
+        .filter(Boolean)
+        .join("、");
+
+
+    openModal(`
+
+        <h2>
+
+            ${escapeHTML(
+                event.year
+            )}
+
+            ·
+
+            ${escapeHTML(
+                event.title
+            )}
+
+        </h2>
+
+
+        <p>
+
+            <b>
+                时间线：
+            </b>
+
+            ${escapeHTML(
+                timeline.name
+            )}
+
+        </p>
+
+
+        <p>
+
+            <b>
+                涉及人物：
+            </b>
+
+            ${escapeHTML(
+                names ||
+                "未填写"
+            )}
+
+        </p>
+
+
+        <p>
+            <b>
+                情节
+            </b>
+        </p>
+
+        <div class="detail">
+            ${escapeHTML(
+                event.content ||
+                "未填写"
+            )}
+        </div>
+
+
+        <p>
+            <b>
+                冲突
+            </b>
+        </p>
+
+        <div class="detail">
+            ${escapeHTML(
+                event.conflict ||
+                "未填写"
+            )}
+        </div>
+
+
+        <p>
+            <b>
+                结果
+            </b>
+        </p>
+
+        <div class="detail">
+            ${escapeHTML(
+                event.result ||
+                "未填写"
+            )}
+        </div>
+
+
+        <div class="actions">
+
+            <button
+                class="btn dark"
+                onclick="plotForm('${timelineId}','${eventId}')">
+                编辑
+            </button>
+
+
+            <button
+                class="btn red"
+                onclick="deletePlot('${timelineId}','${eventId}')">
+                删除
+            </button>
+
+
+            <button
+                class="btn"
+                onclick="closeModal()">
+                关闭
+            </button>
+
+        </div>
+
+    `);
+
+}
+
+
+/* =====================================================
+   删除情节
+===================================================== */
+
+function deletePlot(
+    timelineId,
+    eventId
+){
+
+    if(
+        !confirm(
+            "确定删除这个情节吗？"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    const timeline =
+        DATA.timelines.find(
+            t =>
+                t.id === timelineId
+        );
+
+
+    if(timeline){
+
+        timeline.events =
+            timeline.events.filter(
+                e =>
+                    e.id !== eventId
+            );
+
+    }
+
+
+    closeModal();
+
+    autoSave();
+
+    render();
+
+}
+
+
+/* =====================================================
+   渲染时间线
+===================================================== */
+
+function renderTimelines(){
+
+    const container =
+        $("timelines");
+
+
+    container.innerHTML = "";
+
+
+    if(
+        DATA.timelines.length === 0
+    ){
+
+        container.innerHTML = `
+
+            <div class="empty">
+
+                还没有时间线。
+
+                <br><br>
+
+                点击左侧
+                “＋ 新建时间线”。
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    DATA.timelines.forEach(
+        timeline => {
+
+            const range =
+                timeline.end -
+                timeline.start;
+
+
+            let ticks = "";
+
+
+            for(
+                let i=0;
+                i<=5;
+                i++
+            ){
+
+                const position =
+                    i * 20;
+
+
+                const year =
+                    Math.round(
+                        timeline.start +
+                        range *
+                        i /
+                        5
+                    );
+
+
+                ticks += `
+
+                    <div
+                        class="tick"
+                        style="left:${position}%">
+
+                        <span
+                            class="tick-label">
+                            ${year}
+                        </span>
+
+                    </div>
+
+                `;
+
+            }
+
+
+            let plots = "";
+
+
+            (
+                timeline.events
+                || []
+            )
+            .forEach(
+                event => {
+
+                    const position =
+                        Math.max(
+                            0,
+                            Math.min(
+                                100,
+                                (
+                                    event.year -
+                                    timeline.start
+                                )
+                                /
+                                range
+                                *
+                                100
+                            )
+                        );
+
+
+                    plots += `
+
+                        <div
+                            class="plot-node"
+                            style="left:${position}%"
+                            onclick="
+                                showPlotDetail(
+                                    '${timeline.id}',
+                                    '${event.id}'
+                                )
+                            "
+                            title="${escapeHTML(
+                                event.title
+                            )}">
+
+                        </div>
+
+
+                        <div
+                            class="plot-label"
+                            style="left:${position}%">
+
+                            ${escapeHTML(
+                                event.title
+                            )}
+
+                        </div>
+
+                    `;
+
+                }
+            );
+
+
+            const timelineElement =
+                document.createElement(
+                    "div"
+                );
+
+
+            timelineElement.className =
+                "timeline";
+
+
+            timelineElement.innerHTML = `
+
+                <div
+                    class="timeline-header">
+
+                    <h3>
+                        ⏳
+                        ${escapeHTML(
+                            timeline.name
+                        )}
+                    </h3>
+
+
+                    <span
+                        class="description"
+                        style="margin:0">
+
+                        ${timeline.start}
+                        —
+                        ${timeline.end}
+
+                        ·
+
+                        ${
+                            (
+                                timeline.events
+                                || []
+                            ).length
+                        }
+
+                        个情节
+
+                    </span>
+
+
+                    <span
+                        class="grow">
+                    </span>
+
+
+                    <button
+                        class="btn"
+                        onclick="
+                            plotForm(
+                                '${timeline.id}'
+                            )
+                        ">
+                        ＋ 情节
+                    </button>
+
+
+                    <button
+                        class="btn"
+                        onclick="
+                            timelineForm(
+                                '${timeline.id}'
+                            )
+                        ">
+                        设置
+                    </button>
+
+                </div>
+
+
+                <div class="axis">
+
+                    <div
+                        class="axis-line">
+                    </div>
+
+                    ${ticks}
+
+                    ${plots}
+
+                </div>
+
+            `;
+
+
+            container.appendChild(
+                timelineElement
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   窗口大小变化
+===================================================== */
+
+window.addEventListener(
+    "resize",
+    function(){
+
+        renderRelationshipGraph();
+
+    }
+);
+
+
+/* =====================================================
+   启动
+===================================================== */
+
+render();
+
+</script>
+
+</body>
+</html>
